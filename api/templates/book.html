@@ -1,0 +1,22 @@
+<!-- app/templates/book.html -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Book Details</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+    <h1>Book {{ book_id }}</h1>
+    <p>This is the details page for Book {{ book_id }}.</p>
+    <form action="{{ url_for('rental', book_id=book_id) }}" method="post">
+        <input type="submit" value="Rent">
+    </form>
+    <form action="{{ url_for('return_book', book_id=book_id) }}" method="post">
+        <input type="submit" value="Return">
+    </form>
+</body>
+
+</html>

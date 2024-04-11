@@ -1,4 +1,14 @@
+/* app/static/style.css */
+
 body {
-    margin: 0;
-    font-family: sans-serif;
+    font-family: Arial, sans-serif;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    margin-bottom: 10px;
 }
