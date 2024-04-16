@@ -1,11 +1,45 @@
 # book_app.py
 
-from flask import Flask, render_template, abort
+from flask import Flask, render_template, abort, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import current_user
+from datetime import datetime
+# Define routes for rental and return actions
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 db = SQLAlchemy(app)
+
+
+@app.route('/book/<int:book_id>/rent', methods=['POST'])
+def rent_book(book_id):
+    if not current_user.is_authenticated:
+        flash('You need to log in to rent a book.')
+        return redirect(url_for('login'))
+
+    book = Book.query.get_or_404(book_id)
+
+    if not book.available:
+        flash('This book is currently unavailable for rental.')
+        return redirect(url_for('book', book_id=book_id))
+
+    rental = Rental(user_id=current_user.id, book_id=book_id)
+    book.available = False
+    db.session.add(rental)
+    db.session.commit()
+
+    flash('You have successfully rented the book!')
+    return redirect(url_for('book', book_id=book_id))
+
+
+@app.route('/book/<int:book_id>/return', methods=['POST'])
+def return_book(book_id):
+    if not current_user.is_authenticated:
+        flash('You need to log in to return a book.')
+        return redirect(url_for('login'))
+    flash('You have successfully returned the book!')
+    return redirect(url_for('book', book_id=book_id))
+
 
 # Define models for users, books, and rentals
 
