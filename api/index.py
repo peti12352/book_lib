@@ -1,98 +1,87 @@
 # book_app.py
 
-from flask import Flask, render_template, abort, request, redirect, url_for, flash
+# Import necessary libraries
+from flask import Flask, render_template, abort, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import current_user
 from datetime import datetime
-# Define routes for rental and return actions
+from flask_migrate import Migrate
+import os
 
+# Initialize Flask app
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+# Get the absolute path to the instance folder
+instance_path = os.path.join(app.root_path, 'instance')
+
+# Configure SQLAlchemy to use the SQLite database file in the instance folder
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
+    os.path.join(instance_path, 'database.db')
+
+# Suppress deprecation warning
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
-
-@app.route('/book/<int:book_id>/rent', methods=['POST'])
-def rent_book(book_id):
-    if not current_user.is_authenticated:
-        flash('You need to log in to rent a book.')
-        return redirect(url_for('login'))
-
-    book = Book.query.get_or_404(book_id)
-
-    if not book.available:
-        flash('This book is currently unavailable for rental.')
-        return redirect(url_for('book', book_id=book_id))
-
-    rental = Rental(user_id=current_user.id, book_id=book_id)
-    book.available = False
-    db.session.add(rental)
-    db.session.commit()
-
-    flash('You have successfully rented the book!')
-    return redirect(url_for('book', book_id=book_id))
-
-
-@app.route('/book/<int:book_id>/return', methods=['POST'])
-def return_book(book_id):
-    if not current_user.is_authenticated:
-        flash('You need to log in to return a book.')
-        return redirect(url_for('login'))
-    flash('You have successfully returned the book!')
-    return redirect(url_for('book', book_id=book_id))
-
-
-# Define models for users, books, and rentals
-
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    rentals = db.relationship('Rental', backref='user', lazy=True)
+# Define models for books and rentals
 
 
 class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(128), nullable=False)
-    author = db.Column(db.String(128), nullable=False)
-    isbn = db.Column(db.String(20), nullable=False, unique=True)
     available = db.Column(db.Boolean, nullable=False, default=True)
-    rentals = db.relationship('Rental', backref='book', lazy=True)
 
 
 class Rental(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    book_id = db.Column(db.Integer, db.ForeignKey('book.id'), nullable=False)
-    rental_date = db.Column(db.TIMESTAMP, nullable=False,
-                            server_default=db.func.current_timestamp())
-    return_date = db.Column(db.TIMESTAMP)
+    book_id = db.Column(db.Integer, db.ForeignKey('book_id'), nullable=False)
+    return_date = db.Column(db.DateTime, nullable=True)
 
-
-app = Flask(__name__)
 
 # Load book IDs from CSV
-
-
 def load_books():
-    with open('books.csv', 'r') as file:
+    with open('api/books.csv', 'r') as file:
         books = [line.strip() for line in file.readlines()[1:]]
     return books
 
 
 books = load_books()
 
+
+@app.route('/book/<int:book_id>', methods=['POST'])
+def rent_book(book_id):
+
+    if Book.query.get(book_id).available:
+        rental = Rental(book_id=book_id)
+        db.session.add(rental)
+        Book.query.get(book_id).available = False
+        db.session.commit()
+        flash('You have successfully rented the book!', 'success')
+
+    else:
+        flash('The book is not available for rent.', 'error')
+    return redirect(url_for('book', book_id=book_id))
+
+
+@app.route('/book/<int:book_id>', methods=['POST'])
+def return_book(book_id):
+    book = Book.query.get_or_404(book_id)
+    rental = Rental.query.filter_by(book_id=book_id, return_date=None).first()
+    if rental:
+        rental.return_date = datetime.now()
+        book.available = True
+        db.session.commit()
+        flash('You have successfully returned the book!', 'success')
+    else:
+        flash('You have not rented this book.', 'error')
+    return redirect(url_for('book', book_id=book_id))
+
+
 # Home route
-
-
 @app.route('/')
 def index():
     return render_template('index.html', books=books)
 
+
 # Book route
-
-
 @app.route('/book/<int:book_id>')
 def book(book_id):
     if str(book_id) in books:
@@ -100,25 +89,8 @@ def book(book_id):
     else:
         abort(404)
 
-# Rental route
-
-
-@app.route('/book/<int:book_id>/rental', methods=['POST'])
-def rental(book_id):
-    # Implement rental logic here
-    return f"Rental option selected for Book {book_id}"
-
-# Return route
-
-
-@app.route('/book/<int:book_id>/return', methods=['POST'])
-def return_book(book_id):
-    # Implement return logic here
-    return f"Return option selected for Book {book_id}"
 
 # Error handling
-
-
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('error.html'), 404
