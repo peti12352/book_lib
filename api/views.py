@@ -15,7 +15,7 @@ def home():
         flash('No books found!', category='error')
         return render_template("home.html", user=current_user, books=[])
 
-    return render_template("home.html", user=current_user, books=rents)
+    return render_template("home.html", user=current_user, rents=rents)
 
 # Route for displaying each book's page based on its ID
 # load books
@@ -29,7 +29,7 @@ def book_detail(book_id):
     # Get the book by ID
     book = Book.query.get(book_id)
 
-    if request.method == 'POST':  # determined by the form action in book_page.html
+    if request.method == 'POST':
 
         if book.isRented and request.form.get('action') == 'return':
             # Return the book

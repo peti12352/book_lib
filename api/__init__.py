@@ -8,21 +8,6 @@ db = SQLAlchemy()
 DB_NAME = "database.db"
 
 
-def load_books_from_csv(csv_file):
-    # Load CSV data
-    books_df = pd.read_csv(csv_file)
-
-    # import book
-    from .models import Book
-
-    # Insert data into the database
-    for index, row in books_df.iterrows():
-        book = Book(id=row['id'], title=row['title'], isRented=False)
-
-        db.session.add(book)
-        db.session.commit()
-
-
 def create_app():
     app = Flask(__name__)
     app.config['SECRET_KEY'] = 'secretkey'
@@ -54,12 +39,36 @@ def create_app():
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    # This command can be run using flask load_books
-    @app.cli.command('load_books')
-    def load_books():
-        load_books_from_csv('books.csv')
+    with app.app_context():
+        csv_file = './api/books.csv'
+        load_books(csv_file)
 
     return app
+
+
+def load_books(csv_file):
+    # Read the CSV file into a pandas DataFrame
+    df = pd.read_csv(csv_file)
+
+    # Iterate through the DataFrame rows and insert data into the database
+    for index, row in df.iterrows():
+        # Create a new Book object
+
+        # Book model
+        from .models import Book
+
+        # Don't load books that have the same id
+        existing_book = Book.query.filter_by(id=row['id']).first()
+        if existing_book:
+            continue
+
+        book = Book(id=row['id'], title=row['title'], isRented=False)
+
+        # Add the book to the database session
+        db.session.add(book)
+
+    # Commit the changes to the database
+    db.session.commit()
 
 
 def create_database(app):

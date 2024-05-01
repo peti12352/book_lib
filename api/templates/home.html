@@ -10,7 +10,7 @@
             {% else %}
                 list-group-item-success
             {% endif %}">
-                <a href="/book/{{ rent.book.id }}">{{ rent.book.title }}</a>
+                <a href="/{{ rent.book.id }}">{{ rent.book.title }}</a>
                 {% if rent.book.isRented %}
                     <span class="badge badge-danger">Rented</span>
                 {% else %}
