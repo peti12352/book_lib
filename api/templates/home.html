@@ -1,27 +1,22 @@
-{% extends "base.html" %} {% block title %}Home{% endblock %} {% block content
-  %}
-  <h1 align="center">Welcome {{ user.first_name }}</h1>
-  <ul class="list-group list-group-flush" id="books">
-    {% for book in user.books %}
-    <li class="list-group-item">
-      {{ book.title }} (ID: {{ book.id }})
-      {% if book.is_rented %}
-      <button type="button" class="close" onClick="returnBook('{{ book.id }}')">
-        Return
-      </button>
-      {% else %}
-      <button type="button" class="close" onClick="rentBook('{{ book.id }}')">
-        Rent
-      </button>
-      {% endif %}
-    </li>
-    {% endfor %}
-  </ul>
-  <form method="POST">
-    <input type="text" name="book_title" id="book_title" class="form-control" placeholder="Book Title" />
-    <br />
-    <div class="d-flex justify-content-center">
-      <button type="submit" class="btn btn-primary">Add Book</button>
-    </div>
-  </form>
-  {% endblock %}
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+    <h1 align="center">Welcome {{ user.first_name }}</h1>
+    <ul class="list-group list-group-flush" id="books">
+        {% for rent in rents %}
+            <li class="list-group
+            {% if rent.book.isRented %}
+                list-group-item-danger
+            {% else %}
+                list-group-item-success
+            {% endif %}">
+                <a href="/book/{{ rent.book.id }}">{{ rent.book.title }}</a>
+                {% if rent.book.isRented %}
+                    <span class="badge badge-danger">Rented</span>
+                {% else %}
+                    <span class="badge badge-success">Available</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
