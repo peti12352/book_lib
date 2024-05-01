@@ -23,11 +23,41 @@ def home():
 # book page with rent/return button (which is registered in the db) for each book based on its ID
 
 
+@views.route('/<int:book_id>/add', methods=['GET', 'POST'])
+@login_required
+def add_book(book_id):
+
+    # Check if the book already exists
+    id = book_id
+    book = Book.query.filter_by(id=id).first()
+    if book:
+        flash('Book already exists!', category='error')
+        return redirect(url_for('views.home'))
+
+    if request.method == 'POST':
+
+        title = request.form.get('title')
+
+        # Add the new book
+        new_book = Book(id=id, title=title)
+        db.session.add(new_book)
+        db.session.commit()
+        flash('Book added successfully!', category='success')
+        return redirect(url_for('views.home'))
+
+    return render_template('add_book.html', book_id=book_id)
+
+
 @views.route('/<int:book_id>', methods=['GET', 'POST'])
 @login_required
 def book_detail(book_id):
     # Get the book by ID
     book = Book.query.get(book_id)
+
+    # If the book is not found, redirect to a page where the user can add a new book
+    if not book:
+        flash('Book not found!', category='error')
+        return redirect(url_for('views.add_book', book_id=book_id))
 
     if request.method == 'POST':
 

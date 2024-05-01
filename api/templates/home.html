@@ -10,12 +10,14 @@
             {% else %}
                 list-group-item-success
             {% endif %}">
-                <a href="/{{ rent.book.id }}">{{ rent.book.title }}</a>
+                <a href="/{{ rent.book.id }}" align="center">{{ rent.book.title }}</a>
+                
                 {% if rent.book.isRented %}
-                    <span class="badge badge-danger">Rented</span>
+                    <span class="badge badge-success badge-pill">Rented</span>
                 {% else %}
                     <span class="badge badge-success">Available</span>
                 {% endif %}
+
             </li>
         {% endfor %}
     </ul>
