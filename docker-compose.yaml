@@ -2,12 +2,10 @@ version: '3.8'
 
 services:
   web:
-    build: 
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
-      - "5001:5000"  # Adjusted to avoid conflicts
+      - "5001:5000"
     volumes:
-      - .:/app/api   # Mapping your local directory to the container
+      - ./instance:/app/instance   # Mount a volume for SQLite database
     environment:
       FLASK_ENV: development
